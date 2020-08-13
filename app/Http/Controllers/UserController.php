@@ -276,9 +276,19 @@ class UserController extends Controller
         return response()->json($res);
     }
     public function userInfo(request $request){
+        if($request->has('id'))
+            $id = $request->id;
+        else
+            $id = $request->user->id;
         $res = array();
         $res['status'] = 'success';
-        $res['user'] = User::whereId($request->id)->first();
+        $res['user'] = User::whereId($id)->first();
+        return response()->json($res);
+    }
+    public function totalUserlist(request $request){
+        $res = array();
+        $res['status'] = 'success';
+        $res['users'] = User::where('id','<>',$request->user->id)->get();
         return response()->json($res);
     }
 }

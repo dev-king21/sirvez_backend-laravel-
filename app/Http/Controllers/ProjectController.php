@@ -97,12 +97,11 @@ class ProjectController extends Controller
     }
     public function deleteProject(Request $request)
     {
-        //$request = {'project_id':{}}
-       
-        Project::where(['id'=>$request->project_id])->delete();
-        $site_id = Project_site::where('project_id',$request->project_id)->pluck('id');
-        Project_site::whereIn('id',$site_id)->delete();
-        Room::whereIn('site_id',$site_id)->delete();
+        $id = $request->id;
+        Project::where(['id'=>$id])->delete();
+        Project_site::where('project_id',$id)->delete();
+        Room::where('project_id',$id)->delete();
+        Task::where('project_id',$id)->delete();
         $res["status"] = "success";
         return response()->json($res);
     }
@@ -165,9 +164,12 @@ class ProjectController extends Controller
         $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
         $res['customer'] = Company::whereIn('id',$company_id)->get();
         $res['account_manager'] = User::whereIn('user_type',[1,3])->where('status',1)->where('company_id',$request->user->company_id)->select('id','first_name','last_name')->get();
-        $res['assign_to'] = User::whereIn('user_type',[1,5])->where('status',1)->where('company_id',$request->user->company_id)->get();
-        //$res['users'] = User::whereIn('user_type',2)->where('status',1)->where('company_id',$request->user->company_id)->get();
-        
+        if($request->user->user_type ==1||$request->user->user_type ==2)
+            $com_id = $request->user->company_id;
+        else
+            $com_id = Company_customer::where('customer_id',$request->user->company_id)->first()->company_id;           
+        $res['assign_to'] = User::where('company_id',$com_id)->whereIn('user_type',[1,5])->where('status',1)->get();
+                
         return response()->json($res);
     }
 }

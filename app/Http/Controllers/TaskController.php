@@ -142,8 +142,7 @@ class TaskController extends Controller
             $res['project'] = Project::where('company_id',$company_id)->get();
             $res['customer_site'] = Site::where('company_id',$company_id)->get();
             $res['room'] = Room::where('company_id',$company_id)->get();
-            $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
-            $res['assign_to'] = User::whereIn('user_type',[1,5])->where('status',1)->where('company_id',$company_id)->get();
+            $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');            
         }
         else{
             $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
@@ -151,11 +150,14 @@ class TaskController extends Controller
             $res['project'] = Project::whereIn('company_id',$company_id)->get();
             $res['customer_site'] = Site::whereIn('company_id',$company_id)->get();
             $res['room'] = Room::whereIn('company_id',$company_id)->get();
-            $res['assign_to'] = User::whereIn('user_type',[1,5])->where('status',1)->where('company_id',$company_id)->get();
         }
+       
+        if($request->user->user_type ==1||$request->user->user_type ==2)
+            $com_id = $request->user->company_id;
+        else
+            $com_id = Company_customer::where('customer_id',$request->user->company_id)->first()->company_id;           
         
-        
-        //$res['users'] = User::whereIn('user_type',2)->where('status',1)->where('company_id',$request->user->company_id)->get();
+        $res['assign_to'] = User::where('company_id',$com_id)->whereIn('user_type',[1,5])->where('status',1)->get();
         
         return response()->json($res);
     }

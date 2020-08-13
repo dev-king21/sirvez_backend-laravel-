@@ -17,6 +17,9 @@ Route::group(['middleware' => ['jwt-auth','api-header']], function () {
     
     //dashboard
     Route::get('/dashboard','CompanyCustomerController@getDashboard');////
+    //company modify
+    Route::post('/company/updateCompany','CompanyController@updateCompany');
+    Route::get('/company/getCompanyInfo','CompanyController@getCompanyInfo');
     //customer
     Route::Post('/customers/company/customer-edit','CompanyCustomerController@addCompanyCustomer');///
     Route::Post('/customers/DeleteCompanyCustomer','CompanyCustomerController@DeleteCompanyCustomer');///
@@ -54,6 +57,7 @@ Route::group(['middleware' => ['jwt-auth','api-header']], function () {
     Route::post('/user/updateUser','UserController@CustomerUpdateUser');///
     Route::post('/user/deleteUser','UserController@DeleteUser');///
     Route::get('/user/userInfo','UserController@userInfo');///
+    Route::get('/user/totalUserlist','UserController@totalUserlist');///
 
     Route::post('/category/updateCategory','StikerCategoryController@updateCategory');///
     Route::post('/category/deleteCategory','StikerCategoryController@deleteCategory');///
