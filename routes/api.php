@@ -18,7 +18,7 @@ Route::group(['middleware' => ['jwt-auth','api-header']], function () {
     //dashboard
     Route::get('/dashboard','CompanyCustomerController@getDashboard');////
     //company modify
-    Route::post('/company/updateCompany','CompanyController@updateCompany');
+    Route::post('/company/saveCompany','CompanyController@saveCompany');
     Route::get('/company/getCompanyInfo','CompanyController@getCompanyInfo');
     //customer
     Route::Post('/customers/company/customer-edit','CompanyCustomerController@addCompanyCustomer');///
@@ -51,12 +51,13 @@ Route::group(['middleware' => ['jwt-auth','api-header']], function () {
 
     Route::post('/task/updateTask','TaskController@updateTask');///
     Route::post('/task/deleteTask','TaskController@deleteTask');///
-    Route::get('/task/taskList','TaskController@taskList');
+    Route::get('/task/taskList','TaskController@taskList');///
     Route::get('/task/getTaskInfo','TaskController@getTaskInfo');///
 
     Route::post('/user/updateUser','UserController@CustomerUpdateUser');///
     Route::post('/user/deleteUser','UserController@DeleteUser');///
     Route::get('/user/userInfo','UserController@userInfo');///
+    Route::post('/user/saveUser','UserController@saveUser');///
     Route::get('/user/totalUserlist','UserController@totalUserlist');///
 
     Route::post('/category/updateCategory','StikerCategoryController@updateCategory');///
@@ -64,11 +65,12 @@ Route::group(['middleware' => ['jwt-auth','api-header']], function () {
     Route::get('/category/categoryList','StikerCategoryController@categoryList');///
     Route::get('/category/getCategoryInfo','StikerCategoryController@getCategoryInfo');///
 
-    Route::post('/stiker/updateStiker','StikerController@updateStiker');///
-    Route::post('/stiker/deleteStiker','StikerController@deleteStiker');///
-    Route::get('/stiker/getStikerInfo','StikerController@getStikerInfo');///
+    Route::post('/sticker/updateSticker','StikerController@updateStiker');///
+    Route::post('/sticker/deleteSticker','StikerController@deleteStiker');///
+    Route::get('/sticker/getStickerInfo','StikerController@getStikerInfo');///
 
     Route::get('/notification/getNotification','NotificationController@getNotification');
+    Route::post('/notification/deleteNotification','NotificationController@deleteNotification');
 
 
 
