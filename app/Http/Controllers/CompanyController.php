@@ -4,14 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Company;
+use Illuminate\Support\Facades\Validator;
 
 class CompanyController extends Controller
 {
-    public function updateCompany(request $request){
+    public function saveCompany(request $request){
 
         $v = Validator::make($request->all(), [
             //company info
-            'company_name' => 'required',
+            'name' => 'required',
             'address' => 'required',
             'city' => 'required',
             'postcode' => 'required',
@@ -32,12 +33,12 @@ class CompanyController extends Controller
             $request->logo_img->move(public_path('upload\img'), $fileName);
             $company['logo_img']  = $fileName;
         }
-        if($request->hasFile('bg_img')){
-            $fileName = time().'bg.'.$request->bg_img->extension();  
-            $request->bg_img->move(public_path('upload\img'), $fileName);
+        if($request->hasFile('bg_image')){
+            $fileName = time().'bg.'.$request->bg_image->extension();  
+            $request->bg_image->move(public_path('upload\img'), $fileName);
             $company['bg_image']  = $fileName;
         }
-        $company['name'] = $request->post("company_name");
+        $company['name'] = $request->post("name");
         $company['website']  = $request->post("website");
         $company['company_email']  = $request->post("company_email");
         $company['address']  = $request->post("address");
@@ -47,7 +48,7 @@ class CompanyController extends Controller
         $company['status']  = $request->post("status");
         $company['telephone']  = $request->post("telephone");
         
-           
+        //return response()->json($company );
         $count = Company::where('id','<>',$id)->where('website',$request->website)->count() +
             Company::where('id','<>',$id)->where('company_email',$request->company_email)->count();
         
@@ -58,7 +59,7 @@ class CompanyController extends Controller
             $res['msg'] = 'The website or company email has already been taken!';
             return response()->json($res);
         }
-        company::whereId($request->id)->update($company);
+        company::whereId($id)->update($company);
         return response()->json(['status'=>'success']);
            
             

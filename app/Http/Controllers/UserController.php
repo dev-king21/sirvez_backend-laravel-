@@ -224,7 +224,7 @@ class UserController extends Controller
         $user_info['auth_token'] = $token;
         $id = $request->id;
         
-        if(!isset($id) || $id==""|| $id=='null'|| $id=='undefined'){
+        if(!isset($id) || $id==""|| $id=='null'|| $id=='undefined'|| $id < 1){
             if(!$request->has('password'))
                 return response()->json([
                     'status' => 'error',
@@ -289,6 +289,63 @@ class UserController extends Controller
         $res = array();
         $res['status'] = 'success';
         $res['users'] = User::where('id','<>',$request->user->id)->get();
+        $res['company'] = Company::where('company_type','1')->get();
         return response()->json($res);
+    }
+    public function saveUser(request $request){
+        //return response()->json($request);
+        $v = Validator::make($request->all(), [
+            //user info
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'job_title' => 'required',
+            'user_type' => 'required',
+            'status' => 'required',
+            'mobile' => 'required',
+        ]);
+        if ($v->fails())
+        {
+            return response()->json([
+                'status' => 'error',
+                'msg' => 'You must input data in the field!'
+            ]);
+        }
+        $user_info = array();
+        $fileName = '';
+        if($request->hasFile('profile_pic')){
+
+            $fileName = time().'pic.'.$request->profile_pic->extension();  
+            $request->profile_pic->move(public_path('upload\img'), $fileName);
+            $user_info['profile_pic'] = $fileName;
+        }
+        
+        if($request->password!=""){
+            $user_info['password'] = bcrypt($request->password);
+        }
+       
+        $user_info['email'] = $request->email;
+        $user_info['first_name'] = $request->first_name;
+        $user_info['last_name'] = $request->last_name;
+        $user_info['job_title'] = $request->job_title;
+        $user_info['user_type'] = $request->user_type;
+        $user_info['status'] = $request->status;
+        $user_info['mobile'] = $request->mobile;
+        $token = self::getToken($request->email, $request->password);
+        $user_info['auth_token'] = $token;
+        $id = $request->user->id;
+        
+        
+        $count = User::where('id','<>',$id)->where('email',$request->email)->count() ;
+        
+        if($count>0)
+        {
+            $res = array();
+            $res['status'] = "error";
+            $res['msg'] = 'The email has already been taken!';
+            return response()->json($res);
+        }
+        User::whereId($id)->update($user_info);
+        
+        return response()->json(['status' => "success",'msg'=>'Save success']);
     }
 }

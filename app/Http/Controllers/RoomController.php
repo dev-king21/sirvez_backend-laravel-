@@ -7,13 +7,22 @@ use Illuminate\Support\Facades\Validator;
 use App\Project_site;
 use App\Room;
 use App\Site;
+use App\Task;
 use App\Project;
 use App\Room_photo;
 use App\Notification;
 class RoomController extends Controller
 {
     public function updateRoom(Request $request){
-       
+        // $res = array();
+        
+        // $images = $request->file('room_img');
+        // $i = 0;
+        // foreach($images as $image) {
+        //    $res[$i++] = $image->extension();
+        // }
+
+        // return response()->json(["res" => $res]);
         $v = Validator::make($request->all(), [
             //company info
             'customer_id' => 'required',
@@ -40,10 +49,14 @@ class RoomController extends Controller
         $room['estimate_day']  = $request->estimate_day;
         $room['estimate_time']  = $request->estimate_time;
         $room['notes']  = $request->notes;
-        $room['ceiling_height']  = $request->ceiling_height;
-        $room['ceiling']  = $request->ceiling;
-        $room['wall']  = $request->wall;
-        $room['asbestos']  = $request->asbestos;
+        if($request->has('ceiling_height'))
+            $room['ceiling_height']  = $request->ceiling_height;
+        if($request->has('ceiling'))
+            $room['ceiling']  = $request->ceiling;
+        if($request->has('wall'))
+            $room['wall']  = $request->wall;
+        if($request->has('asbestos'))
+            $room['asbestos']  = $request->asbestos;
         $action = "updated";
         if(!isset($id) || $id==""|| $id=="null"|| $id=="undefined"){
             $room['created_by']  = $request->user->id;
@@ -55,12 +68,23 @@ class RoomController extends Controller
             $room['updated_by'] = $request->user->id;
             Room::whereId($id)->update($room);
         }
-        if($request->hasFile('room_img')){
-            foreach($request->room_img as $key => $img_file){
+        //remove room_photh using room_array
+        $imgs = Room_photo::where('room_id',$id)->get();
+        $res_val = array();
+        foreach($imgs as $key => $row){
+            if(strpos($request->img_array,$row->img_name)===false) 
+            Room_photo::whereId($row->id)->delete();
+        }
+
+        $images = $request->file('room_img');
+        $n = 0;
+        if(isset($images) && count($images) > 0 ){
+            foreach($images as $img_file) {
                 if (isset($img_file)) {
-                    $fileName = time().'_'.$key.'.'.$img_file->extension();  
+                    $n++;
+                    $fileName = time().'_'.$n.'.'.$img_file->extension();  
                     $img_file->move(public_path('upload\img'), $fileName);
-                    room_photo::insert(['room_id'=>$room->id,'user_id'=>$request->user->id,'imgName'=>$fileName]);
+                    Room_photo::create(['room_id'=>$id,'user_id'=>$request->user->id,'img_name'=>$fileName]);
                 }
             }
         }
@@ -83,18 +107,28 @@ class RoomController extends Controller
     {
         //$request = {'id':{}}
         Room::where(['id'=>$request->id])->delete();
+        Room_photo::where(['room_id'=>$request->id])->delete();
+        Task::where(['room_id'=>$request->id])->delete();
         $res["status"] = "success";
         return response()->json($res);
     }
     public function roomInfo(Request $request){
         $res = array();
         if ($request->has('id')) {
-            $room = Room::where('id',$request->id)->first(); 
+            $room = Room::where('rooms.id',$request->id)
+            ->leftJoin('projects','projects.id','=','rooms.project_id')
+            ->select('rooms.*','projects.project_name')->first(); 
             $room['img_files'] = Room_photo::where('room_id',$request->id)->get();
             $res["room"] = $room;
         }
-        $res['projects'] = Project::where('company_id',$request->customer_id)->get();
-        $res['sites'] = Site::where('company_id',$request->customer_id)->get();
+        if(isset($request->customer_id)&& $request->customer_id>0){
+            $res['projects'] = Project::where('company_id',$request->customer_id)->get();
+            $res['sites'] = Site::where('company_id',$request->customer_id)->get();
+        }
+        if(isset($request->project_id)&& $request->project_id>0){
+            $company_id = Project::whereId($request->project_id)->first()->company_id;
+            $res['sites'] = Site::where('company_id',$company_id)->get();
+        }
         $res['status'] = "success";
         return response()->json($res);
     }

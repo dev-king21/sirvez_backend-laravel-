@@ -1,4 +1,0 @@
-Name,Url,Company Email,Address,City,Post Code
-Customer1,http://www.xyz.com,abc@gmail.com,Test,Test,12345
-Customer2,http://www.abc.com,xyz@gmail.com,New,Test,56779
-Palava,http://www.palava.com,info@palava.com,Test,test,12345

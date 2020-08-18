@@ -19,6 +19,9 @@ class CreateRoomsTable extends Migration
             $table->string('company_id');
             $table->string('project_id');
             $table->string('site_id');
+            $table->string('department_id');
+            $table->string('building_id');
+            $table->string('floor_id');
             $table->string('room_number')->nullable();
             $table->string('ceiling_height')->nullable();
             $table->string('ceiling')->nullable();

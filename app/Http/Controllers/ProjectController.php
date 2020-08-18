@@ -133,7 +133,9 @@ class ProjectController extends Controller
     public function projectDetail(Request $request){
         $res = array();
         $project = Project::where('projects.id',$request->id)
-        ->join('companies','projects.company_id','=','companies.id')->select('projects.*','companies.logo_img','companies.name AS company_name')->first();
+        ->leftJoin('companies','projects.company_id','=','companies.id')
+        ->select('projects.*','companies.logo_img','companies.name AS company_name')->first();
+        
         if(User::where('company_id',$project->company_id)->count() > 0)
             $project['customer_user'] = User::where('company_id',$project->company_id)->first()->first_name;
         else
@@ -142,12 +144,18 @@ class ProjectController extends Controller
         $project['room_count'] = Room::where('project_id',$project['id'])->count();
         $project['user_notifications'] = Notification::where('notice_type','3')->where('notice_id',$request->id)->count();
         $res['sites'] = Project_site::where('project_id',$project['id'])
-            ->leftjoin('sites','project_sites.site_id','=','sites.id')->select('sites.*','project_sites.survey_date')->withCount('rooms')->get();
+            ->leftjoin('sites','project_sites.site_id','=','sites.id')->select('project_sites.*','sites.site_name','sites.city','sites.address','sites.postcode')->withCount('rooms')->get();
         $res['rooms'] = Room::where('rooms.project_id',$project['id'])
             ->join('sites','rooms.site_id','=','sites.id')->select('rooms.*','sites.site_name')->get();
-        $res['tasks'] = Task::where('project_id',$project['id'])->get();
-       
+        $tasks = Task::where('project_id',$project['id'])->get();
+        foreach($tasks as $key=>$row){
+            $tasks[$key]['assign_to'] = Project_user::leftJoin('users','users.id','=','project_users.user_id')->where(['project_users.project_id'=>$row->id,'type'=>'2'])->pluck('users.first_name');
+        }
+        $res['tasks'] = $tasks;
         $res["project"] = $project;
+
+        $res['customer_sites']= Site::where('company_id',$project->company_id)->get();
+
         $res['status'] = "success";
         return response()->json($res);
     }

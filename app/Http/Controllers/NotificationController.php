@@ -8,11 +8,14 @@ use Illuminate\Http\Request;
 class NotificationController extends Controller
 {
     public function getNotification(request $request){
+        $res = array();
+
         if($request->user->user_type >1){
-            return response()->json($request->user->user_type);
             $notification = DB::table('notifications')
                 ->leftJoin('users','users.id','=','notifications.created_by')
+                ->leftJoin('companies','companies.id','=','notifications.company_id')
                 ->where('notifications.company_id','=',$request->user->company_id)
+                ->select('notifications.*','users.first_name','companies.name as company_name')
                 ->get();
         }
         else
@@ -20,11 +23,21 @@ class NotificationController extends Controller
             $idx = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
             $notification = DB::table('notifications')
                 ->leftJoin('users','users.id','=','notifications.created_by')
+                ->leftJoin('companies','companies.id','=','notifications.company_id')
                 ->whereIn('notifications.company_id',$idx)
+                ->select('notifications.*','users.first_name','companies.name as company_name')
                 ->get();
         }
         //$notification = Notification::where('company_id',$request->user->company_id)->get()
-        return response()->json($notification);
+        $res['status'] = "success";
+        $res['notifications'] = $notification;
+        return response()->json($res);
 
+    }
+    public function deleteNotification(request $request){
+        $res = array();
+        $res['status'] = "success";
+        Notification::whereId($request->id)->delete();
+        return response()->json($res);
     }
 }

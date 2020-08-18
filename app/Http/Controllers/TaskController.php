@@ -58,6 +58,7 @@ class TaskController extends Controller
             $action = "created";
             if($request->has('assign_to'))
             {
+                Project_user::where(['project_id'=>$id,'type'=>'2'])->delete();
                 $array_res = array();
                 $array_res =json_decode($request->assign_to,true);
                 foreach($array_res as $row)
@@ -77,7 +78,7 @@ class TaskController extends Controller
                 $array_res =json_decode($request->assign_to,true);
                 foreach($array_res as $row)
                 {
-                    Project_user::insert(['project_id'=>$id,'user_id'=>$row,'type'=>'2']);
+                    Project_user::create(['project_id'=>$id,'user_id'=>$row,'type'=>'2']);
 
                 }
             }

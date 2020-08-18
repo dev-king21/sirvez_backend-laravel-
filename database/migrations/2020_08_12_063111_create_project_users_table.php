@@ -18,6 +18,7 @@ class CreateProjectUsersTable extends Migration
             $table->timestamps();
             $table->string('project_id');
             $table->string('user_id');
+            $table->string('type');
         });
     }
 

@@ -59,14 +59,14 @@ class ProjectSiteController extends Controller
     }
     public function siteList(Request $request){
         $res = array();
-        $sites = Project_site::whereIn('project_id',$request->project_id)->get();
+        $sites = Project_site::where('project_id',$request->project_id)->get();
         $res["sites"] = $sites;
         $res['status'] = "success";
         return response()->json($res);
     }
     public function siteInfo(Request $request){
         $res = array();
-        $site = Project_site::whereIn('id',$request->id)->first();       
+        $site = Project_site::where('id',$request->id)->first();       
         $res["site"] = $site;
         $res['status'] = "success";
         return response()->json($res);

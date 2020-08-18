@@ -23,7 +23,7 @@ class StikerCategoryController extends Controller
                 'msg' => 'You must input data in the field!'
             ]);
         }
-        $stiker_info = array();
+        $category = array();
         $id = $request->id;
      
         $category['name']  = $request->name;
@@ -37,7 +37,7 @@ class StikerCategoryController extends Controller
     }
     public function deleteCategory(Request $request){
         //$stiker = {stiker_id}
-        Stiker_category::delete(['id'=>$request->id]);
+        Stiker_category::where(['id'=>$request->id])->delete();
         $res["status"] = "success";
         
         return response()->json($res);
@@ -51,7 +51,7 @@ class StikerCategoryController extends Controller
     public function getCategoryInfo(Request $request){
         $res = array();
         $res['category'] = Stiker_category::whereId($request->id)->first();
-        $res['stikers'] =Stiker::where('category_id',$request->id)->get();
+        $res['stickers'] =Stiker::where('category_id',$request->id)->get();
         $res["status"] = "success";
         return response()->json($res);
     }

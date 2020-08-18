@@ -179,8 +179,14 @@ class CompanyCustomerController extends Controller
         $projects = Project::where('company_id',$company_id)->get();
         if(!is_null($projects)){
             foreach($projects as $key=>$project){
-                $projects[$key]['user_name'] = User::whereId($project->created_by)->first()->first_name;
-                $projects[$key]['manager_name'] = User::whereId($project->manager_id)->first()->first_name;
+                if(User::whereId($project->created_by)->count() > 0)
+                    $projects[$key]['user_name'] = User::whereId($project->created_by)->first()->first_name;
+                else
+                    $projects[$key]['user_name'] = '';
+                if(User::whereId($project->manager_id)->count() > 0)
+                    $projects[$key]['manager_name'] = User::whereId($project->manager_id)->first()->first_name;
+                else
+                    $projects[$key]['manager_name'] = '';
                 $projects[$key]['rooms'] = Room::where('project_id',$project->id)->count();
             }
         }
@@ -197,7 +203,7 @@ class CompanyCustomerController extends Controller
             ->join('sites','rooms.site_id','=','sites.id')->select('rooms.*','sites.site_name')->get();
         $tasks = Task::where('company_id',$company_id)->get();
         foreach($tasks as $key=>$row){
-            $tasks[$key]['assign_to'] = Project_user::leftJoin('users','users.id','=','project_users.user_id')->where(['project_users.project_id'=>$row->id,'type'=>'2'])->pluck('users.first_name');
+            $tasks[$key]['assign_to'] = Project_user::leftJoin('users','users.id','=','project_users.user_id')->where(['project_users.project_id'=>$row->id,'project_users.type'=>'2'])->pluck('users.first_name');
         }
         $res['tasks'] = $tasks;
         return response()->json($res);
@@ -220,11 +226,12 @@ class CompanyCustomerController extends Controller
         $res['status'] = 'success';
         if($request->has('company_id'))
         {
-            $res['users'] = User::where('company_id',$request->company_id)->where('id','<>',$request->user->id)->where('status',1)->join('companys','users.cpmoany_id','=','cpmpany.id')->select('users.*','companies.name')->get();
+            $res['users'] = User::where('company_id',$request->company_id)->where('id','<>',$request->user->id)->where('status',1)->join('companies','users.company_id','=','companies.id')->select('users.*','companies.name')->get();
         }
         else{
-            $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
-            $res['users'] = User::whereIn('company_id',$company_id)->orwhere('company_id',$request->user->company_id)->where('id','<>',$request->user->id)->where('status',1)->get();
+            // $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
+            // $res['users'] = User::whereIn('company_id',$company_id)->orwhere('company_id',$request->user->company_id)->where('id','<>',$request->user->id)->where('status',1)->get();
+            $res['users'] = User::where('users.company_id',$request->user->company_id)->where('users.id','<>',$request->user->id)->where('users.status',1)->join('companies','users.company_id','=','companies.id')->select('users.*','companies.name')->get();
         }
         return response()->json($res);
     }
@@ -306,16 +313,15 @@ class CompanyCustomerController extends Controller
     public function getDashboard(Request $request){
         $res = array();
         $res['status'] = "success";
-        $id = $request->user->id;
-        
-        $res['lives'] = Project::where('company_id',$id)->count();
-        $res['messages'] = Notification::where('company_id',$id)->count();
-        $res['tasks'] = Task::where('company_id',$id)->count();
-        $res['customers'] = Company_customer::where('company_id',$id)->count();
+        $id = $request->user->company_id;
         $customerId = Company_customer::where('company_id',$id)->pluck('customer_id');
+        $res['lives'] = Project::whereIn('company_id',$customerId)->orwhere('company_id',$id)->count();
+        $res['messages'] = Notification::whereIn('company_id',$customerId)->orwhere('company_id',$id)->count();
+        $res['tasks'] = Task::whereIn('company_id',$customerId)->orwhere('company_id',$id)->count();
+        $res['customers'] = Company_customer::whereIn('company_id',$customerId)->orwhere('company_id',$id)->count();
         $res['users'] = User::whereIn('company_id',$customerId)->orwhere('company_id',$id)->count();
-        $res['sites'] = Site::where('company_id',$id)->count();
-        $res['rooms'] = Room::where('company_id',$id)->count();
+        $res['sites'] = Site::whereIn('company_id',$customerId)->orwhere('company_id',$id)->count();
+        $res['rooms'] = Room::whereIn('company_id',$customerId)->orwhere('company_id',$id)->count();
        
         return response()->json($res);
     }

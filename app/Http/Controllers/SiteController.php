@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Validator;
 use App\Site;
 use App\Project_site;
 use App\Room;
+use App\Building;
+use App\Floor;
 use App\Notification;
 class SiteController extends Controller
 {
@@ -86,6 +88,13 @@ class SiteController extends Controller
     public function siteList(Request $request){
         $res = array();
         $sites = Site::where('company_id',$request->company_id)->get();
+        foreach($sites as $key =>$site){
+            $sites[$key]['buildings_count'] = Building::where('site_id',$site_id)->count();
+            $building_id = Building::where('site_id',$site_id)->pluck('id');
+            $sites[$key]['floors_count'] = Floor::whereIn('building_id',$building_id)->count();
+            $floor_id = Floor::wwhereIn('building_id',$building_id)->pluck('id');
+            $sites[$key]['rooms_count'] = Room::whereIn('floor_id',$floor_id)->count();
+        }
         $res["sites"] = $sites;
         $res['status'] = "success";
         return response()->json($res);
@@ -94,6 +103,19 @@ class SiteController extends Controller
         $res = array();
         $site = Site::where('id',$request->id)->first();       
         $res["site"] = $site;
+        $res['status'] = "success";
+        return response()->json($res);
+    }
+    public function getSiteInfo(Request $request){
+        $res = array();
+        $site = Site::where('id',$request->id)->first();       
+        $buildings = Building::where('site_id',$site->id)->get();
+        foreach($buildings as $key =>$building){
+            $floor_id = Floor::wwhere('building_id',$building_id)->pluck('id');
+            $buildings[$key]['rooms_count'] = Room::whereIn('floor_id',$floor_id)->count();
+        }
+        $res["site"] = $site;
+        $res['buildings'] = $buildings;
         $res['status'] = "success";
         return response()->json($res);
     }
