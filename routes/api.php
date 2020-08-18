@@ -39,6 +39,22 @@ Route::group(['middleware' => ['jwt-auth','api-header']], function () {
     Route::post('/site/deleteSite','SiteController@deleteSite');///
     Route::get('/site/siteList','SiteController@siteList');
     Route::get('/site/siteInfo','SiteController@siteInfo');///
+    Route::get('/site/getSiteInfo','SiteController@getSiteInfo');
+
+    Route::post('/department/updateDepartment','DepartmentController@updateDepartment');
+    Route::post('/department/deleteDepartment','DepartmentController@deleteDepartment');
+    Route::get('/department/departmentList','DepartmentController@departmentList');
+    Route::get('/department/departmentInfo','DepartmentController@departmentInfo');
+
+    Route::post('/building/updateBuilding','BuildingController@updateBuilding');
+    Route::post('/building/deleteBuilding','BuildingController@deleteBuilding');
+    Route::get('/building/buildingList','BuildingController@buildingList');
+    Route::get('/building/buildingInfo','BuildingController@buildingInfo');
+
+    Route::post('/floor/updateFloor','FloorController@updateFloor');
+    Route::post('/floor/deleteFloor','FloorController@deleteFloor');
+    Route::get('/floor/floorList','FloorController@floorList');
+    Route::get('/floor/floorInfo','FloorController@floorInfo');
 
     Route::post('/projectsite/updateSite','ProjectSiteController@updateSite');
     Route::post('/projectsite/deleteSite','ProjectSiteController@deleteSite');
