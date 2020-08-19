@@ -14,18 +14,10 @@ use App\Notification;
 class RoomController extends Controller
 {
     public function updateRoom(Request $request){
-        // $res = array();
-        
-        // $images = $request->file('room_img');
-        // $i = 0;
-        // foreach($images as $image) {
-        //    $res[$i++] = $image->extension();
-        // }
-
-        // return response()->json(["res" => $res]);
+       //return response()->json($request);
         $v = Validator::make($request->all(), [
             //company info
-            'customer_id' => 'required',
+            //'customer_id' => 'required',
             'project_id' => 'required',
             'site_id' => 'required',
             'room_number' => 'required',
@@ -42,9 +34,13 @@ class RoomController extends Controller
         }
         $room = array();
         $id = $request->id;
-        $room['company_id'] = $request->customer_id;
+        //$room['company_id'] = $request->customer_id;
+        $room['company_id'] = Project::whereId($request->project_id)->select('company_id')->first()->company_id;
         $room['project_id']  = $request->project_id;
         $room['site_id']  = $request->site_id;
+        $room['department_id']  = $request->department_id;
+        $room['building_id']  = $request->building_id;
+        $room['floor_id']  = $request->floor_id;
         $room['room_number']  = $request->room_number;
         $room['estimate_day']  = $request->estimate_day;
         $room['estimate_time']  = $request->estimate_time;
