@@ -12,6 +12,7 @@ use App\Notification;
 use App\User;
 use App\Room;
 use App\Company;
+use App\Product;
 use App\Company_customer;
 use App\Project_user;
 class ProjectController extends Controller
@@ -98,28 +99,29 @@ class ProjectController extends Controller
     public function deleteProject(Request $request)
     {
         $id = $request->id;
-        Project::where(['id'=>$id])->delete();
-        Project_site::where('project_id',$id)->delete();
-        Room::where('project_id',$id)->delete();
-        Task::where('project_id',$id)->delete();
-        $res["status"] = "success";
+        Project::whereId($id)->update(['archived'=>1,'archived_day'=>date('Y-m-d')]);
+        // Project::where(['id'=>$id])->delete();
+        // Project_site::where('project_id',$id)->delete();
+        // Room::where('project_id',$id)->delete();
+        // Task::where('project_id',$id)->delete();
+         $res["status"] = "success";
         return response()->json($res);
     }
     public function projectList(Request $request){
         $res = array();
         if($request->user->user_type==1){
             $id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
-            $project_array = Project::whereIn('projects.company_id',$id)
+            $project_array = Project::whereIn('projects.company_id',$id)->where('archived',$request->archived)
             ->join('companies','companies.id','=','projects.company_id')
             ->join('users','users.id','=','projects.manager_id')
-            ->select('projects.*', 'companies.name AS customer','users.first_name AS account_manager')->get();
+            ->select('projects.*', 'companies.name AS customer','users.first_name AS account_manager','users.profile_pic')->get();
         }
         else{
             $id = $request->user->company_id;
-            $project_array = Project::where('projects.company_id',$id)
+            $project_array = Project::where('projects.company_id',$id)->where('archived',$request->archived)
             ->join('companies','companies.id','=','projects.company_id')
             ->join('users','users.id','=','projects.manager_id')
-            ->select('projects.*', 'companies.name AS customer','users.first_name AS account_manager')->get();
+            ->select('projects.*', 'companies.name AS customer','users.first_name AS account_manager','users.profile_pic')->get();
         }
         foreach($project_array as $key => $row){
             $project_array[$key]['site_count'] = Project_site::where('project_id',$row['id'])->count();
@@ -147,6 +149,15 @@ class ProjectController extends Controller
             ->leftjoin('sites','project_sites.site_id','=','sites.id')->select('project_sites.*','sites.site_name','sites.city','sites.address','sites.postcode')->withCount('rooms')->get();
         $res['rooms'] = Room::where('rooms.project_id',$project['id'])
             ->join('sites','rooms.site_id','=','sites.id')->select('rooms.*','sites.site_name')->get();
+        $room_ids = Room::where('project_id',$project['id'])->pluck('id');
+        $products = Product::whereIn('room_id',$room_ids)->get();
+        foreach($products as $key => $product)
+        {
+            $products[$key]['room_name'] = Room::whereId($product->room_id)->first()->room_number;
+            $products[$key]['to_room_name'] = Room::whereId($product->to_room_id)->first()->room_number;
+            $products[$key]['to_site_name'] = Site::whereId($product->to_site_id)->first()->site_name;
+        }
+        $res['products'] = $products;
         $tasks = Task::where('project_id',$project['id'])->get();
         foreach($tasks as $key=>$row){
             $tasks[$key]['assign_to'] = Project_user::leftJoin('users','users.id','=','project_users.user_id')->where(['project_users.project_id'=>$row->id,'type'=>'2'])->pluck('users.first_name');
@@ -161,23 +172,37 @@ class ProjectController extends Controller
     }
     public function getProjectInfo(Request $request){
         //return response()->json($request);
+        $res = array();
         if ($request->has('id')) {
             $id = $request->id;
-        
-            $res = array();
-            $res['status'] = 'success';
             $res['project'] = Project::whereId($id)->first();
             $res['project']['assign_to'] = Project_user::where(['project_id'=>$id,'type'=>'1'])->pluck('user_id');
         }
-        $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
-        $res['customer'] = Company::whereIn('id',$company_id)->get();
-        $res['account_manager'] = User::whereIn('user_type',[1,3])->where('status',1)->where('company_id',$request->user->company_id)->select('id','first_name','last_name')->get();
+        if($request->user->user_type ==1){
+            $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
+            $res['customer'] = Company::whereIn('id',$company_id)->get();
+            $res['account_manager'] = User::whereIn('user_type',[1,3])->where('status',1)->where('company_id',$request->user->company_id)->select('id','first_name','last_name')->get();
+        }
+        else{
+            $res['customer'] = Company::where('id',$request->user->company_id)->get();
+            $com_id = Company_customer::where('customer_id',$request->user->company_id)->first()->company_id;           
+            $res['account_manager'] = User::whereIn('user_type',[1,3])->where('status',1)->where('company_id',$com_id)->select('id','first_name','last_name')->get();
+
+        }
         if($request->user->user_type ==1||$request->user->user_type ==2)
             $com_id = $request->user->company_id;
         else
             $com_id = Company_customer::where('customer_id',$request->user->company_id)->first()->company_id;           
         $res['assign_to'] = User::where('company_id',$com_id)->whereIn('user_type',[1,5])->where('status',1)->get();
-                
+        
+        $res['status'] = 'success';        
+        return response()->json($res);
+    }
+    public function setFavourite(request $request)
+    {
+        Project::whereId($request->id)->update(['favourite'=>$request->favourite]);
+        $res = array();
+        $res['status'] = 'success';
         return response()->json($res);
     }
 }

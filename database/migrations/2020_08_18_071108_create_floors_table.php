@@ -20,6 +20,7 @@ class CreateFloorsTable extends Migration
             $table->string('department_id');
             $table->string('building_id');
             $table->string('floor_name');
+            $table->string('status');
             $table->string('upload_img')->nullable();
             $table->string('created_by')->nullable();
             $table->string('updated_by')->nullable();

@@ -100,28 +100,61 @@ class TaskController extends Controller
     }
     public function deleteTask(Request $request)
     {
-        //$request = {'id':{}}
-        Task::where(['id'=>$request->id])->delete();
+        $id = $request->id;
+        Task::whereId($id)->update(['archived'=>1,'archived_day'=>date('Y-m-d')]);
+        //Task::where(['id'=>$request->id])->delete();
         $res["status"] = "success";
         return response()->json($res);
     }
     public function taskList(Request $request){
         $res = array();
-        if($request->user->user_type > 1)
-            $tasks = Task::where('tasks.company_id',$request->user->company_id)
-                ->leftJoin('projects','projects.id','=','tasks.project_id')
-                ->leftJoin('sites','sites.id','=','tasks.site_id')
-                ->leftJoin('rooms','rooms.id','=','tasks.room_id')
-                ->select('tasks.*','projects.project_name','sites.site_name','rooms.room_number')
-                ->get();
+        if($request->archived ==0){
+            if($request->user->user_type > 1)
+                $tasks = Task::where('tasks.archived','0')
+                    ->orwhere('tasks.archived_day', '>', date('Y-m-d', strtotime("-30 days")))
+                    ->where('tasks.company_id',$request->user->company_id)
+                    ->leftJoin('projects','projects.id','=','tasks.project_id')
+                    ->leftJoin('sites','sites.id','=','tasks.site_id')
+                    ->leftJoin('rooms','rooms.id','=','tasks.room_id')
+                    ->join('users','users.id','=','tasks.created_by')
+                    ->select('tasks.*','projects.project_name','sites.site_name','rooms.room_number','users.first_name AS account_manager','users.profile_pic')
+                    ->get();
+            else{
+                $customer_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
+                $tasks = Task::where('tasks.archived','0')
+                    ->orwhere('tasks.archived_day', '>', date('Y-m-d', strtotime("-30 days")))
+                    ->whereIn('tasks.company_id',$customer_id)
+                    ->leftJoin('projects','projects.id','=','tasks.project_id')
+                    ->leftJoin('sites','sites.id','=','tasks.site_id')
+                    ->leftJoin('rooms','rooms.id','=','tasks.room_id')
+                    ->join('users','users.id','=','tasks.created_by')
+                    ->select('tasks.*','projects.project_name','sites.site_name','rooms.room_number','users.first_name AS account_manager','users.profile_pic')
+                    ->get();
+            }
+        }
         else{
-            $customer_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
-            $tasks = Task::whereIn('tasks.company_id',$customer_id)
-                ->leftJoin('projects','projects.id','=','tasks.project_id')
-                ->leftJoin('sites','sites.id','=','tasks.site_id')
-                ->leftJoin('rooms','rooms.id','=','tasks.room_id')
-                ->select('tasks.*','projects.project_name','sites.site_name','rooms.room_number')
-                ->get();
+            if($request->user->user_type > 1)
+                $tasks = Task::where('tasks.archived','1')
+                    ->where('tasks.archived_day', '<=', date('Y-m-d', strtotime("-30 days")))
+                    ->where('tasks.company_id',$request->user->company_id)
+                    ->leftJoin('projects','projects.id','=','tasks.project_id')
+                    ->leftJoin('sites','sites.id','=','tasks.site_id')
+                    ->leftJoin('rooms','rooms.id','=','tasks.room_id')
+                    ->join('users','users.id','=','tasks.created_by')
+                    ->select('tasks.*','projects.project_name','sites.site_name','rooms.room_number','users.first_name AS account_manager','users.profile_pic')
+                    ->get();
+            else{
+                $customer_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
+                $tasks = Task::where('tasks.archived','1')
+                    ->where('tasks.archived_day', '<=', date('Y-m-d', strtotime("-30 days")))
+                    ->whereIn('tasks.company_id',$customer_id)
+                    ->leftJoin('projects','projects.id','=','tasks.project_id')
+                    ->leftJoin('sites','sites.id','=','tasks.site_id')
+                    ->leftJoin('rooms','rooms.id','=','tasks.room_id')
+                    ->join('users','users.id','=','tasks.created_by')
+                    ->select('tasks.*','projects.project_name','sites.site_name','rooms.room_number','users.first_name AS account_manager','users.profile_pic')
+                    ->get();
+            }
         }
         $res["tasks"] = $tasks;
         $res['status'] = "success";
@@ -142,8 +175,14 @@ class TaskController extends Controller
             $res['customer'] = Company::where('id',$company_id)->get();
             $res['project'] = Project::where('company_id',$company_id)->get();
             $res['customer_site'] = Site::where('company_id',$company_id)->get();
-            $res['room'] = Room::where('company_id',$company_id)->get();
-            $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');            
+            $res['room'] = Room::where('company_id',$company_id)->get();$company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');            
+        }
+        if($request->has('room_id')){
+            $room = Room::whereId($request->room_id)->first();
+            $res['customer'] = Company::whereId($room->company_id)->get();
+            $res['project'] = Project::whereId($room->project_id)->get();
+            $res['customer_site'] = Site::whereId($room->site_id)->get();
+            $res['room'] = Room::whereId($room->id)->get();            
         }
         else{
             $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
@@ -160,6 +199,13 @@ class TaskController extends Controller
         
         $res['assign_to'] = User::where('company_id',$com_id)->whereIn('user_type',[1,5])->where('status',1)->get();
         
+        return response()->json($res);
+    }
+    public function setFavourite(request $request)
+    {
+        Task::whereId($request->id)->update(['favourite'=>$request->favourite]);
+        $res = array();
+        $res['status'] = 'success';
         return response()->json($res);
     }
 }

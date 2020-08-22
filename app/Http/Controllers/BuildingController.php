@@ -49,6 +49,7 @@ class BuildingController extends Controller
             Building::whereId($id)->update($building);
         }
         $res["status"] = "success";
+        $res['msg'] = "Data is saved";
         return response()->json($res);
     }
     public function deleteBuilding(Request $request){
@@ -71,7 +72,22 @@ class BuildingController extends Controller
     public function buildingInfo(Request $request){
         $res = array();
         $res['building'] = Building::whereId($request->id)->first();
+        $floors =Floor::withCount('rooms')->where('building_id',$request->id)->get();
+        $res['floors'] = $floors;
         $res["status"] = "success";
+        return response()->json($res);
+    }
+    public function getBuildingInfo(Request $request){
+        $res = array();
+        if ($request->has('id')) {
+            $building = Building::where('buildings.id',$request->id)
+            ->leftJoin('sites','sites.id','=','buildings.site_id')
+            ->select('buildings.*','sites.site_name')->first(); 
+            $res["building"] = $building;
+        }
+          
+        $res['departments'] = Department::where('site_id',$request->site_id)->get();
+        $res['status'] = "success";
         return response()->json($res);
     }
 }

@@ -27,6 +27,9 @@ class CreateTasksTable extends Migration
             $table->text('description')->nullable();
             $table->string('created_by')->nullable();
             $table->string('updated_by')->nullable();
+            $table->string('archived')->nullable(); 
+            $table->string('archived_day')->nullable(); 
+            $table->string('favourite')->nullable(); 
 
         });
     }

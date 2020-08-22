@@ -7,6 +7,8 @@ use App\Department;
 use App\Building;
 use App\Floor;
 use App\Room;
+use App\Site;
+use App\Company_customer;
 use Illuminate\Support\Facades\Validator;
 class FloorController extends Controller
 {
@@ -16,7 +18,8 @@ class FloorController extends Controller
             'site_id' => 'required',
             'department_id' => 'required',
             'building_id' => 'required',
-            'floor_name' => 'required'
+            'floor_name' => 'required',
+            'status' => 'required',
            
         ]);
         if ($v->fails())
@@ -32,8 +35,9 @@ class FloorController extends Controller
         $floor['department_id']  = $request->department_id;
         $floor['building_id']  = $request->building_id;
         $floor['floor_name']  = $request->floor_name;
+        $floor['status']  = $request->status;
         if($request->hasFile('upload_img')){
-            $fileName = time().'.'.$request->upload_img->extension();  
+            $fileName = time().'floor.'.$request->upload_img->extension();  
             $request->upload_img->move(public_path('upload\img'), $fileName);
             $floor['upload_img']  = $fileName;
         }
@@ -66,7 +70,33 @@ class FloorController extends Controller
     public function floorInfo(Request $request){
         $res = array();
         $res['floor'] = Floor::whereId($request->id)->first();
+        $rooms = Room::where('rooms.floor_id',$request->id)
+        ->leftJoin('buildings','buildings.id','=','rooms.building_id')
+        ->leftJoin('floors','floors.id','=','rooms.floor_id')
+        ->leftJoin('projects','projects.id','=','rooms.project_id')
+        ->select('rooms.*','buildings.building_name','floors.floor_name','projects.project_name')
+        ->get();
+        $res['rooms'] = $rooms;
         $res["status"] = "success";
+        return response()->json($res);
+    }
+    public function getFloorInfo(Request $request){
+        $res = array();
+        if ($request->has('id')) {
+            $floor = Floor::whereId($request->id)->first();
+            $res["floor"] = $floor;
+        }
+        if($request->user->user_type ==1){
+            $customer_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
+            $res['sites'] = Site::whereIn('id',$customer_id)->get();
+        }
+        else{
+            $res['sites'] = Site::where('id',$request->user->company_id)->get();
+        }
+        $res['department_id'] = building::whereId($request->building_id)->first()->department_id;
+        $res['departments'] = Department::where('site_id',$request->site_id)->get();
+        $res['buildings'] = Building::where('site_id',$request->site_id)->get();
+        $res['status'] = "success";
         return response()->json($res);
     }
 }

@@ -8,13 +8,18 @@ use App\Project_site;
 use App\Room;
 use App\Site;
 use App\Task;
+use App\Product;
 use App\Project;
+use App\Project_user;
 use App\Room_photo;
 use App\Notification;
+use App\Company_customer;
+use App\Department;
+use App\Building;
+use App\Floor;
 class RoomController extends Controller
 {
     public function updateRoom(Request $request){
-       //return response()->json($request);
         $v = Validator::make($request->all(), [
             //company info
             //'customer_id' => 'required',
@@ -113,17 +118,56 @@ class RoomController extends Controller
         if ($request->has('id')) {
             $room = Room::where('rooms.id',$request->id)
             ->leftJoin('projects','projects.id','=','rooms.project_id')
-            ->select('rooms.*','projects.project_name')->first(); 
+            ->leftJoin('companies','companies.id','=','rooms.company_id')
+            ->select('rooms.*','projects.project_name','companies.name as company_name')->first(); 
             $room['img_files'] = Room_photo::where('room_id',$request->id)->get();
             $res["room"] = $room;
-        }
-        if(isset($request->customer_id)&& $request->customer_id>0){
-            $res['projects'] = Project::where('company_id',$request->customer_id)->get();
-            $res['sites'] = Site::where('company_id',$request->customer_id)->get();
+            $products= Product::where('room_id',$request->id)->get();
+            foreach($products as $key => $product)
+            {
+                $products[$key]['room_name'] = Room::whereId($product->room_id)->first()->room_number;
+                $products[$key]['to_room_name'] = Room::whereId($product->to_room_id)->first()->room_number;
+                $products[$key]['to_site_name'] = Site::whereId($product->to_site_id)->first()->site_name;
+            }
+            $res['products'] = $products;
+            $tasks = Task::where('room_id',$request->id)->get();
+            foreach($tasks as $key=>$row){
+                $tasks[$key]['assign_to'] = Project_user::leftJoin('users','users.id','=','project_users.user_id')->where(['project_users.project_id'=>$row->id,'type'=>'2'])->pluck('users.first_name');
+            }
+            $res['tasks'] = $tasks;
         }
         if(isset($request->project_id)&& $request->project_id>0){
             $company_id = Project::whereId($request->project_id)->first()->company_id;
             $res['sites'] = Site::where('company_id',$company_id)->get();
+            $res['projects'] = Project::where('company_id',$company_id)->get();
+            $site_id = Site::where('company_id',$company_id)->pluck('id');
+            $res['departments'] = Department::whereIn('site_id',$site_id)->get();
+            $res['buildings'] = Building::whereIn('site_id',$site_id)->get();
+            $res['floors'] = Floor::whereIn('site_id',$site_id)->get();
+        }
+        else if(isset($request->customer_id)&& $request->customer_id>0){
+            $res['projects'] = Project::where('company_id',$request->customer_id)->get();
+            $res['sites'] = Site::where('company_id',$request->customer_id)->get();
+            $site_id = Site::where('company_id',$request->customer_id)->pluck('id');
+            $res['departments'] = Department::whereIn('site_id',$site_id)->get();
+            $res['buildings'] = Building::whereIn('site_id',$site_id)->get();
+            $res['floors'] = Floor::whereIn('site_id',$site_id)->get();
+        }
+        else{
+            if($request->user->user_type ==1){
+                $customer_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
+                $res['sites'] = Site::whereIn('id',$customer_id)->get();
+                $res['projects'] = Project::whereIn('company_id',$customer_id)->get();
+                
+            }
+            else{
+                $res['sites'] = Site::where('id',$request->user->company_id)->get();
+                $res['projects'] = Project::where('company_id',$request->user->$company_id)->get();
+            }
+            $res['department_id'] = building::whereId($request->building_id)->first()->department_id;
+            $res['departments'] = Department::where('site_id',$request->site_id)->get();
+            $res['buildings'] = Building::where('site_id',$request->site_id)->get();
+            $res['floors'] = Floor::where('building_id',$request->building_id)->get();
         }
         $res['status'] = "success";
         return response()->json($res);

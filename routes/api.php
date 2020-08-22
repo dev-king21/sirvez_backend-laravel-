@@ -34,6 +34,7 @@ Route::group(['middleware' => ['jwt-auth','api-header']], function () {
     Route::get('/project/projectList','ProjectController@projectList');///
     Route::get('/project/projectInfo','ProjectController@projectDetail');///
     Route::get('/project/getprojectInfo','ProjectController@getProjectInfo');///
+    Route::post('/project/setFavourite','ProjectController@setFavourite');
 
     Route::post('/site/updateSite','SiteController@updateSite');///
     Route::post('/site/deleteSite','SiteController@deleteSite');///
@@ -50,16 +51,24 @@ Route::group(['middleware' => ['jwt-auth','api-header']], function () {
     Route::post('/building/deleteBuilding','BuildingController@deleteBuilding');
     Route::get('/building/buildingList','BuildingController@buildingList');
     Route::get('/building/buildingInfo','BuildingController@buildingInfo');
+    Route::get('/building/getBuildingInfo','BuildingController@getBuildingInfo');
 
     Route::post('/floor/updateFloor','FloorController@updateFloor');
     Route::post('/floor/deleteFloor','FloorController@deleteFloor');
     Route::get('/floor/floorList','FloorController@floorList');
     Route::get('/floor/floorInfo','FloorController@floorInfo');
+    Route::get('/floor/getFloorInfo','FloorController@getFloorInfo');
 
     Route::post('/projectsite/updateSite','ProjectSiteController@updateSite');
     Route::post('/projectsite/deleteSite','ProjectSiteController@deleteSite');
     Route::get('/projectsite/siteList','ProjectSiteController@siteList');
     Route::get('/projectsite/siteInfo','ProjectSiteController@siteInfo');
+
+    Route::post('/product/updateProduct','ProductController@updateProduct');
+    Route::post('/product/deleteProduct','ProductController@deleteProduct');
+    Route::get('/product/productList','ProductController@productList');
+    Route::get('/product/productInfo','ProductController@productInfo');
+    Route::get('/product/getProductInfo','ProductController@getProductInfo');
 
     Route::post('/room/updateRoom','RoomController@updateRoom');///
     Route::post('/room/deleteRoom','RoomController@deleteRoom');///
@@ -69,6 +78,7 @@ Route::group(['middleware' => ['jwt-auth','api-header']], function () {
     Route::post('/task/deleteTask','TaskController@deleteTask');///
     Route::get('/task/taskList','TaskController@taskList');///
     Route::get('/task/getTaskInfo','TaskController@getTaskInfo');///
+    Route::post('/task/setFavourite','TaskController@setFavourite');
 
     Route::post('/user/updateUser','UserController@CustomerUpdateUser');///
     Route::post('/user/deleteUser','UserController@DeleteUser');///

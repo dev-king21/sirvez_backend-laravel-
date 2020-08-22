@@ -28,7 +28,10 @@ class CreateProjectsTable extends Migration
             $table->string('project_summary')->nullable();
             $table->string('upload_doc')->nullable();   
             $table->string('status')->nullable();   
-            $table->string('signed_off')->nullable();   
+            $table->string('signed_off')->nullable(); 
+            $table->string('archived')->nullable();   
+            $table->string('archived_day')->nullable(); 
+            $table->string('favourite')->nullable(); 
         });
     }
 

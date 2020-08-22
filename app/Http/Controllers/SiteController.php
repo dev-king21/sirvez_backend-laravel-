@@ -9,11 +9,13 @@ use App\Project_site;
 use App\Room;
 use App\Building;
 use App\Floor;
+use App\Company_customer;
+use App\Company;
 use App\Notification;
 class SiteController extends Controller
 {
     public function updateSite(Request $request){
-       
+      
         $v = Validator::make($request->all(), [
             //company info
             'customer_id' => 'required',
@@ -87,12 +89,22 @@ class SiteController extends Controller
     }
     public function siteList(Request $request){
         $res = array();
-        $sites = Site::where('company_id',$request->company_id)->get();
+        if($request->has('company_id'))
+            $sites = Site::where('company_id',$request->company_id)->get();
+        else{
+            if($request->user->user_type==1)
+            {
+                $company_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
+                $sites = Site::where('company_id',$company_id)->get();
+            }
+            else
+                $sites = Site::where('company_id',$request->user->company_id)->get();
+        }
         foreach($sites as $key =>$site){
-            $sites[$key]['buildings_count'] = Building::where('site_id',$site_id)->count();
-            $building_id = Building::where('site_id',$site_id)->pluck('id');
+            $sites[$key]['buildings_count'] = Building::where('site_id',$site->id)->count();
+            $building_id = Building::where('site_id',$site->id)->pluck('id');
             $sites[$key]['floors_count'] = Floor::whereIn('building_id',$building_id)->count();
-            $floor_id = Floor::wwhereIn('building_id',$building_id)->pluck('id');
+            $floor_id = Floor::whereIn('building_id',$building_id)->pluck('id');
             $sites[$key]['rooms_count'] = Room::whereIn('floor_id',$floor_id)->count();
         }
         $res["sites"] = $sites;
@@ -101,22 +113,32 @@ class SiteController extends Controller
     }
     public function siteInfo(Request $request){
         $res = array();
-        $site = Site::where('id',$request->id)->first();       
-        $res["site"] = $site;
-        $res['status'] = "success";
-        return response()->json($res);
-    }
-    public function getSiteInfo(Request $request){
-        $res = array();
-        $site = Site::where('id',$request->id)->first();       
-        $buildings = Building::where('site_id',$site->id)->get();
+        $site = Site::whereId($request->id)->first();   
+        $buildings = Building::where('buildings.site_id',$site->id)
+        ->leftjoin('departments','departments.id','=','buildings.department_id')
+        ->select('buildings.*','departments.department_name')->get();
         foreach($buildings as $key =>$building){
-            $floor_id = Floor::wwhere('building_id',$building_id)->pluck('id');
+            $buildings[$key]['floors_count'] = Floor::where('building_id',$building->id)->count();
+            $floor_id = Floor::where('building_id',$building->id)->pluck('id');
             $buildings[$key]['rooms_count'] = Room::whereIn('floor_id',$floor_id)->count();
         }
         $res["site"] = $site;
         $res['buildings'] = $buildings;
         $res['status'] = "success";
+        return response()->json($res);
+    }
+    public function getSiteInfo(Request $request){
+        $res = array();
+        if ($request->has('id')) {
+            $res['site'] = Site::where('id',$request->id)->first();   
+        }    
+        if($request->user->user_type ==1){
+            $customer_id = Company_customer::where('company_id',$request->user->company_id)->pluck('customer_id');
+            $res['customers'] = Company::whereIn('id',$customer_id)->get();
+        }
+        else{
+            $res['customers'] = Company::where('id',$request->user->company_id)->get();
+        }
         return response()->json($res);
     }
 }

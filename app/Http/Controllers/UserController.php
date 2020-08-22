@@ -44,6 +44,7 @@ class UserController extends Controller
 
     public function login(Request $request)
     {
+        set_time_limit(10000);
         $user = \App\User::where('email', $request->email)->get()->first();
         if (is_null($user)) return response()->json(['status'=>'error','msg'=>'That email does not exist!']);
         if($user->status !='1') return response()->json(['status'=>'error','msg'=>'Please wait until allow!']);
